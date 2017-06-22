@@ -2,7 +2,7 @@
 
 import urllib2
 
-PR = "http://cqksxt.com/Uploadfiles/f64caf6a-1eb0-4ef6-b5d9-1467e62fd10e/MonitoringImg/"
+PR = "http://******.com/Uploadfiles/f64caf6a-1eb0-4ef6-b5d9-1467e62fd10e/MonitoringImg/"
 
 
 def find_imgs():
