@@ -1,3 +1,7 @@
+#!/usr/bin/env python27
+# -*- coding: utf-8 -*-
+
+
 def fibs():
     a=0
     b=1
