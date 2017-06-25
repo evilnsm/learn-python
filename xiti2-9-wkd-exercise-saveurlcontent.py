@@ -34,4 +34,4 @@ def get_links_count(url):
         content = ''
     return len(content.split('<a href=')) - 1
 
-print get_links_count('http://10.78.214.168')
+print get_links_count('http://*.*.*.*')
