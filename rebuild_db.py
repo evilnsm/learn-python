@@ -35,6 +35,9 @@ ENTRY_START=32
 total_count=0
 header=array.array('B')
 entry=array.array('B')
+'''
+define 2 arrays for int <= ASCII for each char in song names 
+'''
 
 domains=[]
 
