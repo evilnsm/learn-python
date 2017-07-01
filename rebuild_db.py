@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: iso-8859-1
+# -*- coding: utf-8
 
 # The iPod shuffle Database Generator
 # (C) 2005 Martin J. Fiedler -|- KeyJ@s2000.ws
@@ -36,14 +36,21 @@ total_count=0
 header=array.array('B')
 entry=array.array('B')
 '''
-define 2 arrays for int <= ASCII for each char in song names 
+利用'B'生成  unsign integer数组，每个元素 = 1 byte = 8 bit = 2H(2位16进制的数)
+
+header是iTunesSD文件的前18 byte，enrty用来记录文件的全路径以/作为分隔符，
+
+entry的1,2,3,4,5,26,29,31元素其实是特定的，文件fullname以/打头从下标[32]开始写
+
+
+@若目录级数>50且每级目录>10个字符(char)，558byte能写得下?含unicode的话更占位置
 '''
 
 domains=[]
 
 ################################################################################
 
-def write_to_db(filename):
+def write_to_db(filename): #传过来的filename其实是/开头的
   global total_count,entry,iTunesSD,domains
   ext=os.path.splitext(filename[1:])[1].lower()
   if ext==".mp3":
@@ -55,14 +62,32 @@ def write_to_db(filename):
   fnpos=1
   fnlen=len(filename)
   offset=ENTRY_START
+  '''
+  从33byte开始写文件名。名字中的每个char换算成ASCII码值(0-127)刚好与array的 B 参数吻合，占8位，在ultraledit里显示一组的2个数字
+
+  典型：下标[32]为空，34格下标[33]为2F
+
+  空一格,写一格。硬件要求的吧?
+   '''
   while offset<ENTRY_SIZE:
-    entry[offset]=0
-    if fnpos<fnlen:
-      entry[offset+1]=ord(filename[fnpos])
+    entry[offset]=0  #先空一格 offset格填0,offset+1格填ASCII码
+    if fnpos<fnlen:  #fnpos用来迭代每个char
+      entry[offset+1]=ord(filename[fnpos])  #char to ASCII 
       fnpos+=1
-    else:
+    else: #文件名写完毕，后面全部填0
       entry[offset+1]=0
     offset+=2
+  '''
+  上文的while循环不好理解。典型的C-code？试试pythonic，用列表推导式
+  t1 = [ord(i) for i in list(filename)]  
+  t2 = [0] * len(t1) 
+  t3 = [rv for i in zip(t2,t1) for rv in i]
+  t3.extend([0]*(ENTRY_SIZE - ENTRY_START - len(t3))) #不足的扩充0
+  #将列表元素复制到array里,默认就是"追加"写入模式:)
+  entry.fromlist(t3)
+
+  推荐还是用while循环吧，比较高效 而且不用操心计算元素个数
+  '''
   if ext!=".m4b" and ext!=".aa":
     entry[555]=1
   entry.tofile(iTunesSD)
@@ -75,7 +100,7 @@ def browse(path):
   global header,entry,domains
   count=0
 
-  if path=='.': print "/:",
+  if path=='.': print "/:",  #好有心机的逗号 ，完美与下文的count files组成一行
   else: print "%s:"%path[1:],
   sys.stdout.flush()
 
@@ -84,7 +109,9 @@ def browse(path):
   except OSError:
     print "cannot browse"
     return
-
+  '''
+  用list dir 等词作为变量名，真的好么
+  '''
   list=[]
   for item in dir:
     if item=="." or item=="..": continue
@@ -97,7 +124,7 @@ def browse(path):
     except OSError: continue
     if is_dir:
       list.append('D'+item)
-      continue
+      continue  
 
     ext=os.path.splitext(item)[1].lower()
     if ext==".mp3" or ext==".m4a" or ext==".m4b" or ext==".m4p" or ext==".wav" or ext==".aa":
@@ -108,11 +135,11 @@ def browse(path):
   list.sort(lambda a,b: cmp(a.lower(),b.lower()))
   domains.append([])
   for item in list:
-    fullname=path+'/'+item[1:]
+    fullname=path+'/'+item[1:] #无论是Direcoty还是File,开头都加上了'/'
     if item[0]=='D':
       browse(fullname)
     elif item[0]=='F':
-      write_to_db(fullname)
+      write_to_db(fullname) #试试传入2个参数，对F加以区分，调用后就可以直接确定 entry[13]的值
     else:
       raise KeyError,"this should never happen"
 
@@ -205,6 +232,12 @@ except EOFError:
 if have<1:
   print "Rebuilding iTunesSD file header from scratch."
   header=array.array('B')
+  '''
+  如果没有上行的header重新定义会怎样？ have=1/2那些情景里，header应该是已经写好的
+  fromlist会继续向里添加18格0，造成header长度为36
+  但是此句是在if have<1 里运行，have=0说明header没有读到iTunesSD文件，fromfile失败
+  觉得没有必要重新定义header
+  '''
   header.fromlist([0]*HEADER_SIZE)
   header[3]=0x01
   header[4]=0x06
@@ -214,7 +247,7 @@ else:
 
 if have<2:
   print "Rebuilding iTunesSD entry header from scratch."
-  entry=array.array('B')
+  entry=array.array('B')   
   entry.fromlist([0]*ENTRY_SIZE)
   entry[1]=0x02
   entry[2]=0x2E
@@ -231,6 +264,13 @@ if have: iTunesSD.close()
 try:
   iTunesSD=file("iPod_Control/iTunes/iTunesSD","wb")
   header.tofile(iTunesSD)
+  '''
+  header先是fromfile ，失败的话就重新定义18格0和3,4,8格
+  entry也是fromfile后重定义前[31]下标
+  好像真的没有必要判断来判断去?反正header和entry都要重写，何不直接生产一个？
+  为了尽量减少设备的改写？ entry[0-31]也只判断了第一首歌
+  
+  '''
 except IOError:
   print "Critical error: cannot write iTunesSD database file!"
   sys.exit(1)
