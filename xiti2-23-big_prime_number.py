@@ -1,6 +1,12 @@
 #coding=utf-8
 
+'''
+求10亿以后的100个素数
+可以看出时间差主要由于 for...in 循环没有 while 循环快
+'''
+
 import time
+import math
 
 def is_p(n):
     if not isinstance(n,int):
@@ -10,26 +16,14 @@ def is_p(n):
     elif n == 2:
     	return True
     else:
-        for i in range(2,n):
+        for i in xrange(2,(int(math.sqrt(n))+1)):
             if n % i == 0:
                 return False
         return True
 
 
-
-'''
-l = [x for x in xrange(100,200) if is_p(x)]
-print l
-'''
-
-'''
-结果很神奇,count = 10时，协程1.99s 循环1.94s
-count=100时，协程17.27s 循环17.39s
-count=1000时，协程177.45s 循环177.89s
-'''
-
 def find_p():
-    begin = 1000000
+    begin = 1000000000
     while True:
         if is_p(begin):
             yield begin
@@ -39,7 +33,7 @@ def find_p():
 
 l1=[]
 l2=[]
-count = 1000
+count = 100
 
 #coroutine
 a1=time.time()
@@ -52,7 +46,7 @@ print 'coroutine time used: %s s'% (b1-a1)
 
 #loop
 a2=time.time()
-start=1000000
+start=1000000000
 while count:
     if is_p(start):
         l2.append(start)
