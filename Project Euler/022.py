@@ -12,8 +12,8 @@ def score(name):
 
 with open('022_names.txt','r') as f:
     rr = f.readlines()
-c = rr[0].split(',')
-l = [s.replace('"','') for s in c]
+
+l = [s.replace('"','') for s in rr[0].split(',')]
 l.sort()
 s = [score(x)*(l.index(x)+1) for x in l]
 
