@@ -28,26 +28,24 @@ for i in xrange(0,N):
         if j == 0: #此行打头第一个数
             if i == 0: #第一步特殊情况
                 f[i][j] = l[i][j]
-            else:#上一行只能取右边的数的f为基
+            else:#打头第一个数，上一行只在它的右边有数
                 f[i][j] = f[i-1][j] + l[i][j]
         elif j == i: #到达此行的最后一个数了，i-1行只能取j-1，因为上一行的数肯定在左边
             f[i][j] = f[i-1][j-1] + l[i][j]
         else:
             f[i][j] = max(f[i-1][j-1],f[i-1][j]) + l[i][j]
-max_path = 0
-for j in xrange(0,N):
-    if f[N-1][j] > max_path:
-        max_path = f[N-1][j]
-print max_path,time.time()-a
+print max(max(f)),time.time()-a
 ##############################
 a=time.time()
-f = [[0]*len(x) for x in l]
+p = [[0]*len(x) for x in l]
 def find_max(i,j):
-    if f[i][j] > 0:
-        return f[i][j]
+    if p[i][j] > 0:
+        print i,j
+        return p[i][j]
     if i == N-1:
+        print 'XXXX'
         return l[i][j]
     else:
-        f[i][j] = l[i][j] + max(find_max(i+1,j),find_max(i+1,j+1))
-        return f[i][j]
+        p[i][j] = l[i][j] + max(find_max(i+1,j),find_max(i+1,j+1))
+        return p[i][j]
 print find_max(0,0),time.time()-a
